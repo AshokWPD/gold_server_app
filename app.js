@@ -62,7 +62,9 @@ app.use('/api/v1/forms', formsRoutes);
 // app.use((_req, res, _next) => {
 //   res.sendFile(path.join(__dirname, 'public-flutter', 'index.html'));
 // });
-
+app.get('/', (req, res) => {
+  res.send('Hi hacker');
+});
 
 
 // ErrorHandler
