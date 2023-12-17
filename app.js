@@ -40,7 +40,7 @@ app.use(morgan('dev'));
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '10mb' }));
 app.use('/api/v1', express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'public-flutter')));
+// app.use(express.static(path.join(__dirname, 'public-flutter')));
 
 
 // Routes
@@ -58,10 +58,10 @@ app.use('/api/v1/forms', formsRoutes);
 
 
 
-// Serve Flutter App
-app.use((_req, res, _next) => {
-  res.sendFile(path.join(__dirname, 'public-flutter', 'index.html'));
-});
+// // Serve Flutter App
+// app.use((_req, res, _next) => {
+//   res.sendFile(path.join(__dirname, 'public-flutter', 'index.html'));
+// });
 
 
 
