@@ -1,0 +1,316 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("MYSQL_URI")
+}
+
+model User {
+  id                  Int           @id @default(autoincrement())
+  avatar              String?       @default("")
+  name                String
+  email               String        @unique
+  phone               String        @unique
+  department          String
+  employeeNumber      String        @default("")
+  password            String
+  fcmToken            String?
+  type                UserType      @default(user)
+  adminApproved       AdminApproved @default(pending)
+  resetPasswordToken  String?
+  resetPasswordExpire DateTime?
+  active              Boolean       @default(true)
+  createdAt           DateTime      @default(now())
+
+  memberInGroups       Member[]
+  messages             Message[]
+  reads                Read[]
+  feedbacks            Feedback[]            @relation("createdBy")
+  feedbackAssignments  FeedbackAssignment[]
+  userOrientationReads UserOrientationRead[]
+}
+
+enum UserType {
+  user
+  subAdmin
+  userAndSubAdmin
+  admin
+}
+
+enum AdminApproved {
+  pending
+  approved
+  rejected
+}
+
+model Group {
+  id          Int              @id @default(autoincrement())
+  avatar      String?
+  name        String
+  members     Member[]
+  createdAt   DateTime         @default(now())
+  assessments RiskAssessment[]
+  messages    Message[]        @relation("GroupMessages")
+}
+
+model Member {
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId Int
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  Int
+
+  @@id([groupId, userId])
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  title       String   @default("--")
+  content     String   @db.MediumText
+  timer       Int
+  read        Read[]
+  files       File[]
+  createdById Int      @map("createdBy")
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  groups      Group[]  @relation("GroupMessages")
+}
+
+model Read {
+  id        Int      @id @default(autoincrement())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId Int
+  groupId   Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  reply     String?
+  mode      String?
+  readAt    DateTime @default(now())
+}
+
+model File {
+  id        Int     @id @default(autoincrement())
+  name      String
+  fileType  String
+  messageId Int
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+model RiskAssessment {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  groupId   Int
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model OtherFile {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model UserOrientation {
+  id                   Int                   @id @default(autoincrement())
+  name                 String                @unique
+  createdAt            DateTime              @default(now())
+  userOrientationReads UserOrientationRead[]
+}
+
+model UserOrientationRead {
+  id                Int             @id @default(autoincrement())
+  userOrientation   UserOrientation @relation(fields: [userOrientationId], references: [id], onDelete: Cascade)
+  userOrientationId Int
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            Int
+  readAt            DateTime        @default(now())
+}
+
+model Feedback {
+  id                  Int                  @id @default(autoincrement())
+  location            String
+  organizationName    String
+  date                String
+  time                String
+  feedback            String
+  source              String
+  color               FeedbackColor
+  selectedValues      String
+  description         String
+  files               FeedbackFile[]
+  actionFiles         FeedbackActionFile[]
+  reportedBy          String
+  responsiblePerson   String?
+  actionTaken         String?
+  status              Status?
+  userAcknowledgement String?
+  createdById         Int                  @map("createdBy")
+  createdBy           User                 @relation("createdBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt           DateTime             @default(now())
+  feedbackAssignments FeedbackAssignment[]
+}
+
+model FeedbackAssignment {
+  id                  Int      @id @default(autoincrement())
+  assignmentCompleted Boolean
+  feedbackId          Int
+  userId              Int
+  feedback            Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FeedbackFile {
+  id         Int      @id @default(autoincrement())
+  name       String
+  fileType   String
+  feedbackId Int
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+}
+
+model FeedbackActionFile {
+  id         Int      @id @default(autoincrement())
+  name       String
+  fileType   String
+  feedbackId Int
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+}
+
+enum FeedbackColor {
+  red
+  yellow
+  green
+}
+
+enum Status {
+  inProgress
+  rejected
+  closed
+  closedWithoutAction
+}
+
+
+
+model Meeting {
+  meetingId      Int              @id @default(autoincrement())
+  meetCreater    String
+  meetDateTime   DateTime
+  meetTitle      String
+  meetingTime    Int
+  department     String
+  createrId      Int
+  membersCount   Int
+  isOnline       Boolean
+  attId          Int?
+  meetEndTime    DateTime
+  membersList    MembersList[]
+  membersAttended MembersAttended[]
+}
+
+model MembersList {
+  id         Int      @id @default(autoincrement())
+  memberId   String
+  memberName String
+  meetingId  Int
+  meeting    Meeting @relation(fields: [meetingId], references: [meetingId])
+}
+
+model MembersAttended {
+  id              Int              @id @default(autoincrement())
+  memberId        Int
+  membersName     String
+  memberInTime    DateTime
+  memberOutTime   DateTime
+  dateTime        DateTime
+  latitude        Decimal
+  longitude       Decimal
+  digitalSignatureFile DigitalSignatureFile?
+  meetingId       Int
+  meeting         Meeting          @relation(fields: [meetingId], references: [meetingId])
+}
+
+model DigitalSignatureFile {
+  fileId       Int      @id @default(autoincrement())
+  name         String
+  fileType     String
+  path         String
+  attendanceId Int      @unique
+  attendance   MembersAttended @relation(fields: [attendanceId], references: [id])
+}
+
+
+
+
+
+
+
+
+model Form {
+  formId      Int      @id @default(autoincrement())
+  formTitle   String
+  formResult  String     
+  username    String
+  userId      String
+  dateAndTime String
+  description String
+  status      String
+  q1          String?
+  q2          String?
+  q3          String?
+  q4          String?
+  q5          String?
+  q6          String?
+  q7          String?
+  q8          String?
+  q9          String?
+  q10         String?
+  q11         String?
+  q12         String?
+  q13         String?
+  q14         String?
+  q15         String?
+  q16         String?
+  q17         String?
+  q18         String?
+  q19         String?
+  q20         String?
+  q21         String?
+  q22         String?
+  q23         String?
+  q24         String?
+  q25         String?
+  q26         String?
+  q27         String?
+  q28         String?
+  q29         String?
+  q30         String?
+  q31         String?
+  q32         String?
+  q33         String?
+  q34         String?
+  q35         String?
+  q36         String?
+  q37         String?
+  q38         String?
+  q39         String?
+  q40         String?
+  q41         String?
+  q42         String?
+  q43         String?
+  q44         String?
+  q45         String?
+  q46         String?
+  q47         String?
+  q48         String?
+  q49         String?
+  q50         String?
+}
+
+
+
+
+
+
